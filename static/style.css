@@ -1,13 +1,7 @@
 body { font-family: Arial, sans-serif; background: #f8f9fa; margin: 0; }
 .content-wrapper { max-width: 800px; margin: 30px auto; background: #fff; padding: 20px; border-radius: 8px; }
 header { display: flex; justify-content: space-between; align-items: center; }
-nav a { margin: 0 10px; text-decoration: none; color: #333; }
-
-/* Ensure navbar links are readable on dark background */
-.navbar-dark .navbar-nav .nav-link,
-.navbar-dark .navbar-brand {
-    color: #fff;
-}
+nav a { margin: 0 10px; text-decoration: none; }
 .post, .comment { border-bottom: 1px solid #eee; padding: 10px 0; }
 .post:last-child, .comment:last-child { border-bottom: none; }
 .categories { font-size: 0.9em; }

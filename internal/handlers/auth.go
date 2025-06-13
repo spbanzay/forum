@@ -172,6 +172,7 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	if err == nil {
 		h.DB.Exec("DELETE FROM sessions WHERE id = ?", cookie.Value)
 		cookie.Expires = time.Unix(0, 0)
+		cookie.MaxAge = -1
 		http.SetCookie(w, cookie)
 	}
 	http.Redirect(w, r, "/", http.StatusSeeOther)
