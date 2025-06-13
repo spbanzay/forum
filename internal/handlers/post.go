@@ -18,16 +18,23 @@ type PostHandler struct {
 }
 
 func (h *PostHandler) ListPosts(w http.ResponseWriter, r *http.Request) {
-	categoryIDs := r.URL.Query()["category"] // для множественного выбора ?category=1&category=2
+	search := r.URL.Query().Get("q")
+	categoryIDs := r.URL.Query()["category"] // ?category=1&category=2
 
 	query := `
-		SELECT DISTINCT p.id, p.title, p.content, p.created_at, u.username
-		FROM posts p
-		JOIN users u ON p.user_id = u.id
-		LEFT JOIN post_categories pc ON p.id = pc.post_id
-		WHERE 1=1
-	`
+                SELECT DISTINCT p.id, p.title, p.content, p.created_at, u.username
+                FROM posts p
+                JOIN users u ON p.user_id = u.id
+                LEFT JOIN post_categories pc ON p.id = pc.post_id
+                WHERE 1=1`
+
 	var args []interface{}
+
+	if search != "" {
+		query += " AND (p.title LIKE ? OR p.content LIKE ?)"
+		pattern := "%" + search + "%"
+		args = append(args, pattern, pattern)
+	}
 
 	if len(categoryIDs) > 0 {
 		query += " AND pc.category_id IN (?" + strings.Repeat(",?", len(categoryIDs)-1) + ")"
@@ -92,6 +99,7 @@ func (h *PostHandler) ListPosts(w http.ResponseWriter, r *http.Request) {
 		"Selected":   categoryIDs,
 		"Page":       "index",
 		"User":       username,
+		"Query":      search,
 	})
 }
 
