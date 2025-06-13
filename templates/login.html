@@ -2,13 +2,21 @@
 <h2>Вход</h2>
 {{ $flash := .Flash }}
 {{ if $flash }}
-    <div class="flash">{{ $flash }}</div>
+    <div class="alert alert-warning">{{ $flash }}</div>
 {{ end }}
 
-{{ if .Error }}<div class="error">{{ .Error }}</div>{{ end }}
+{{ if .Error }}<div class="text-danger mb-2">{{ .Error }}</div>{{ end }}
 <form method="POST" action="/login">
-    <label>Email: <input type="email" name="email" required></label>
-    <label>Пароль: <input type="password" name="password" required></label>
-    <button type="submit">Войти</button>
+    <div class="mb-3">
+        <label class="form-label">Email:
+            <input type="email" class="form-control" name="email" required>
+        </label>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Пароль:
+            <input type="password" class="form-control" name="password" required>
+        </label>
+    </div>
+    <button class="btn btn-primary" type="submit">Войти</button>
 </form>
 {{ end }} 

@@ -1,10 +1,10 @@
-body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; }
-.container { width: 80%; margin: 30px auto; background: #fff; padding: 20px; border-radius: 8px; }
+body { font-family: Arial, sans-serif; background: #f8f9fa; margin: 0; }
+.content-wrapper { max-width: 800px; margin: 30px auto; background: #fff; padding: 20px; border-radius: 8px; }
 header { display: flex; justify-content: space-between; align-items: center; }
 nav a { margin: 0 10px; text-decoration: none; color: #333; }
 .post, .comment { border-bottom: 1px solid #eee; padding: 10px 0; }
 .post:last-child, .comment:last-child { border-bottom: none; }
-.categories { font-size: 0.9em; color: #888; }
+.categories { font-size: 0.9em; }
 .likes { color: #007bff; cursor: pointer; margin-right: 10px; }
 .dislikes { color: #dc3545; cursor: pointer; }
 .filter { margin-bottom: 20px; }
@@ -13,13 +13,6 @@ nav a { margin: 0 10px; text-decoration: none; color: #333; }
 form { margin: 15px 0; }
 input, select, textarea { margin: 5px 0; padding: 6px; width: 100%; box-sizing: border-box; }
 button { padding: 8px 16px; }
-.flash {
-    background: #ffe08a;
-    padding: 10px;
-    margin-bottom: 10px;
-    border: 1px solid #e6c200;
-    color: #333;
-}
 button.selected {
     background-color: gold;
     color: black;
