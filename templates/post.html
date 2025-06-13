@@ -1,44 +1,46 @@
 {{ define "content" }}
-<div class="post">
-    <h2>{{ .Post.Title }}</h2>
-    <div class="categories">Категории: {{ range .Post.Categories }}{{ .Name }} {{ end }}</div>
-    <div>Автор: {{ .Post.Author }} | {{ .Post.CreatedAt }}</div>
-    <div>{{ .Post.Content }}</div>
-    <div>
-        <form method="POST" action="/like" style="display:inline;">
-            <input type="hidden" name="type" value="post">
-            <input type="hidden" name="id" value="{{ .Post.ID }}">
-            <input type="hidden" name="action" value="like">
-            <button type="submit">👍 {{ .Post.Likes }}</button>
-        </form>
-        <form method="POST" action="/like" style="display:inline;">
-            <input type="hidden" name="type" value="post">
-            <input type="hidden" name="id" value="{{ .Post.ID }}">
-            <input type="hidden" name="action" value="dislike">
-            <button type="submit">👎 {{ .Post.Dislikes }}</button>
-        </form>
-    </div>    
+<div class="card mb-4 post">
+    <div class="card-body">
+        <h2 class="card-title">{{ .Post.Title }}</h2>
+        <div class="categories mb-2">Категории: {{ range .Post.Categories }}{{ .Name }} {{ end }}</div>
+        <div class="text-muted mb-3">Автор: {{ .Post.Author }} | {{ .Post.CreatedAt }}</div>
+        <div class="mb-3">{{ .Post.Content }}</div>
+        <div>
+            <form method="POST" action="/like" class="d-inline">
+                <input type="hidden" name="type" value="post">
+                <input type="hidden" name="id" value="{{ .Post.ID }}">
+                <input type="hidden" name="action" value="like">
+                <button class="btn btn-outline-primary btn-sm" type="submit">👍 {{ .Post.Likes }}</button>
+            </form>
+            <form method="POST" action="/like" class="d-inline">
+                <input type="hidden" name="type" value="post">
+                <input type="hidden" name="id" value="{{ .Post.ID }}">
+                <input type="hidden" name="action" value="dislike">
+                <button class="btn btn-outline-danger btn-sm" type="submit">👎 {{ .Post.Dislikes }}</button>
+            </form>
+        </div>
+    </div>
 </div>
-<h3>Комментарии</h3>
+<h3 class="mt-4">Комментарии</h3>
 {{ if .Comments }}
     {{ range .Comments }}
-    <div class="comment">
+    <div class="comment py-2 border-bottom">
         <div><b>{{ .Author }}</b> | {{ .CreatedAt }}</div>
         <div>{{ .Content }}</div>
-        <div>
-            <form method="POST" action="/like" style="display:inline;">
+        <div class="mt-1">
+            <form method="POST" action="/like" class="d-inline">
                 <input type="hidden" name="type" value="comment">
                 <input type="hidden" name="id" value="{{ .ID }}">
                 <input type="hidden" name="action" value="like">
-                <button type="submit">👍 {{ .Likes }}</button>
+                <button class="btn btn-outline-primary btn-sm" type="submit">👍 {{ .Likes }}</button>
             </form>
-            <form method="POST" action="/like" style="display:inline;">
+            <form method="POST" action="/like" class="d-inline">
                 <input type="hidden" name="type" value="comment">
                 <input type="hidden" name="id" value="{{ .ID }}">
                 <input type="hidden" name="action" value="dislike">
-                <button type="submit">👎 {{ .Dislikes }}</button>
+                <button class="btn btn-outline-danger btn-sm" type="submit">👎 {{ .Dislikes }}</button>
             </form>
-        </div>        
+        </div>
     </div>
     {{ end }}
 {{ else }}
@@ -47,10 +49,10 @@
 <!-- Только для авторизованных пользователей -->
 
 {{ if .User }}
-<form method="POST" action="/post/comment">
+<form method="POST" action="/post/comment" class="mt-3">
     <input type="hidden" name="post_id" value="{{ .Post.ID }}">
-    <textarea name="content" rows="3" required></textarea>
-    <button type="submit">Добавить комментарий</button>
+    <textarea class="form-control mb-2" name="content" rows="3" required></textarea>
+    <button class="btn btn-secondary" type="submit">Добавить комментарий</button>
 </form>
 {{ else }}
 <p><a href="/login">Войдите</a>, чтобы оставить комментарий.</p>
