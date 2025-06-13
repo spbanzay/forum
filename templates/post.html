@@ -1,10 +1,9 @@
 {{ define "content" }}
-<div class="card mb-4 post">
-    <div class="card-body">
-        <h2 class="card-title">{{ .Post.Title }}</h2>
+<div class="post-card mb-4">
+    <h2 class="card-title">{{ .Post.Title }}</h2>
         <div class="categories mb-2">
             {{ range .Post.Categories }}
-                <a class="badge bg-secondary text-decoration-none me-1" href="/filter/category?id={{ .ID }}">{{ .Name }}</a>
+                <a class="badge bg-secondary category-badge text-decoration-none" href="/filter/category?id={{ .ID }}">{{ .Name }}</a>
             {{ end }}
         </div>
         <div class="text-muted mb-3">Автор: {{ .Post.Author }} | {{ .Post.CreatedAt }}</div>
@@ -23,7 +22,6 @@
                 <button class="btn btn-outline-danger btn-sm" type="submit">👎 {{ .Post.Dislikes }}</button>
             </form>
         </div>
-    </div>
 </div>
 <h3 class="mt-4">Комментарии</h3>
 {{ if .Comments }}
