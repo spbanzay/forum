@@ -2,7 +2,11 @@
 <div class="card mb-4 post">
     <div class="card-body">
         <h2 class="card-title">{{ .Post.Title }}</h2>
-        <div class="categories mb-2">Категории: {{ range .Post.Categories }}{{ .Name }} {{ end }}</div>
+        <div class="categories mb-2">
+            {{ range .Post.Categories }}
+                <a class="badge bg-secondary text-decoration-none me-1" href="/filter/category?id={{ .ID }}">{{ .Name }}</a>
+            {{ end }}
+        </div>
         <div class="text-muted mb-3">Автор: {{ .Post.Author }} | {{ .Post.CreatedAt }}</div>
         <div class="mb-3">{{ .Post.Content }}</div>
         <div>

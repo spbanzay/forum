@@ -4,7 +4,7 @@ header { display: flex; justify-content: space-between; align-items: center; }
 nav a { margin: 0 10px; text-decoration: none; color: #333; }
 .post, .comment { border-bottom: 1px solid #eee; padding: 10px 0; }
 .post:last-child, .comment:last-child { border-bottom: none; }
-.categories { font-size: 0.9em; color: #888; }
+.categories { font-size: 0.9em; }
 .likes { color: #007bff; cursor: pointer; margin-right: 10px; }
 .dislikes { color: #dc3545; cursor: pointer; }
 .filter { margin-bottom: 20px; }
