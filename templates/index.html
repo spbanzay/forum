@@ -34,30 +34,21 @@
 {{ end }}
 
 {{ range .Posts }}
-  <article class="card mb-3 post">
-    <div class="card-body">
-      <h2 class="card-title"><a href="/post/{{ .ID }}">{{ .Title }}</a></h2>
-      <div class="meta text-muted">
-        Автор: {{ .Author }} |
-        {{ .CreatedAt.Format "02.01.2006 15:04" }}
-      </div>
-
-      <section class="content my-2">
-        <p>{{ .Content }}</p>
-      </section>
-
-      <footer class="post-footer">
-        <div class="mb-2">
-          {{ range .Categories }}
-            <a class="badge bg-secondary text-decoration-none me-1" href="/?category={{ .ID }}">{{ .Name }}</a>
-          {{ end }}
-        </div>
-        <span class="me-2">👍 {{ .Likes }}</span>
-        <span class="me-2">👎 {{ .Dislikes }}</span>
-        <a href="/post/{{ .ID }}">Комментарии</a>
-      </footer>
+  <div class="post-card">
+    <h5><a href="/post/{{ .ID }}">{{ .Title }}</a></h5>
+    <div class="mb-2">
+      {{ range .Categories }}
+        <span class="badge bg-secondary category-badge">{{ .Name }}</span>
+      {{ end }}
+      <small class="text-muted">Опубликовано: {{ .CreatedAt.Format "02.01.2006" }}</small>
     </div>
-  </article>
+    <p>{{ .Content }}</p>
+    <div class="d-flex align-items-center">
+      <span class="likes me-3">👍 {{ .Likes }}</span>
+      <span class="dislikes me-3">👎 {{ .Dislikes }}</span>
+      <a href="/post/{{ .ID }}" class="btn btn-sm btn-outline-primary ms-auto">Читать далее</a>
+    </div>
+  </div>
 {{ end }}
 
 {{ end }}
