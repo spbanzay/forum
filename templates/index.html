@@ -41,9 +41,8 @@
 
       <footer class="post-footer">
         <div class="mb-2">
-          Категории:
           {{ range .Categories }}
-            <a href="/filter/category?id={{ .ID }}">{{ .Name }}</a>
+            <a class="badge bg-secondary text-decoration-none me-1" href="/filter/category?id={{ .ID }}">{{ .Name }}</a>
           {{ end }}
         </div>
         <span class="me-2">👍 {{ .Likes }}</span>
