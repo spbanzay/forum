@@ -1,0 +1,14 @@
+{{ define "login.html" }}
+<h2>Вход</h2>
+{{ $flash := .Flash }}
+{{ if $flash }}
+    <div class="flash">{{ $flash }}</div>
+{{ end }}
+
+{{ if .Error }}<div class="error">{{ .Error }}</div>{{ end }}
+<form method="POST" action="/login">
+    <label>Email: <input type="email" name="email" required></label>
+    <label>Пароль: <input type="password" name="password" required></label>
+    <button type="submit">Войти</button>
+</form>
+{{ end }} 

@@ -1,0 +1,57 @@
+{{ define "index.html" }}
+<h2>Последние посты</h2>
+
+<h3>Фильтр по категориям</h3>
+<form method="GET" action="/filter/category">
+  {{ range .Categories }}
+    <label>
+      <input type="checkbox" name="id" value="{{ .ID }}" {{ if (inSlice $.Selected (printf "%d" .ID)) }}checked{{ end }}>
+      {{ .Name }}
+    </label><br>
+  {{ end }}
+  <button type="submit">Применить</button>
+  {{ if .Selected }}
+    <a href="/" style="margin-left: 15px;">Сбросить фильтр</a>
+  {{ end }}
+</form>
+<hr>
+
+<form action="{{ if .LikedView }}/{{ else }}/filter/liked{{ end }}" method="get" style="display:inline;">
+  <button type="submit" name="liked" value="1" {{ if .LikedView }}class="selected"{{ end }}>
+    Понравившиеся
+  </button>
+</form>
+
+{{ if eq (len .Posts) 0 }}
+  <p>Постов пока нет.</p>
+{{ end }}
+
+{{ range .Posts }}
+  <article class="post">
+    <header>
+      <h2><a href="/post/{{ .ID }}">{{ .Title }}</a></h2>
+      <div class="meta">
+        Автор: {{ .Author }} |
+        {{ .CreatedAt.Format "02.01.2006 15:04" }}
+      </div>
+    </header>
+
+    <section class="content">
+      <p>{{ .Content }}</p>
+    </section>
+
+    <footer class="post-footer">
+      <div>
+        Категории:
+        {{ range .Categories }}
+          <a href="/filter/category?id={{ .ID }}">{{ .Name }}</a>
+        {{ end }}
+      </div>
+      <span>👍 {{ .Likes }}</span>
+      <span>👎 {{ .Dislikes }}</span>
+      <a href="/post/{{ .ID }}">Комментарии</a>
+    </footer>
+  </article>
+{{ end }}
+
+{{ end }}

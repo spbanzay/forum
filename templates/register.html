@@ -1,0 +1,10 @@
+{{ define "register.html" }}
+<h2>Регистрация</h2>
+{{ if .Error }}<div class="error">{{ .Error }}</div>{{ end }}
+<form method="POST" action="/register">
+    <label>Email: <input type="email" name="email" required></label>
+    <label>Имя пользователя: <input type="text" name="username" required></label>
+    <label>Пароль: <input type="password" name="password" required></label>
+    <button type="submit">Зарегистрироваться</button>
+</form>
+{{ end }}

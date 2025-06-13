@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  forum:
+    build: .
+    container_name: forum-app
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./static:/app/static
+      - ./templates:/app/templates
+      - ./internal/db/schema.sql:/app/internal/db/schema.sql
+      - ./forum.db:/app/forum.db
+    restart: unless-stopped

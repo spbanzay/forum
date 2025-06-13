@@ -1,0 +1,59 @@
+{{ define "content" }}
+<div class="post">
+    <h2>{{ .Post.Title }}</h2>
+    <div class="categories">Категории: {{ range .Post.Categories }}{{ .Name }} {{ end }}</div>
+    <div>Автор: {{ .Post.Author }} | {{ .Post.CreatedAt }}</div>
+    <div>{{ .Post.Content }}</div>
+    <div>
+        <form method="POST" action="/like" style="display:inline;">
+            <input type="hidden" name="type" value="post">
+            <input type="hidden" name="id" value="{{ .Post.ID }}">
+            <input type="hidden" name="action" value="like">
+            <button type="submit">👍 {{ .Post.Likes }}</button>
+        </form>
+        <form method="POST" action="/like" style="display:inline;">
+            <input type="hidden" name="type" value="post">
+            <input type="hidden" name="id" value="{{ .Post.ID }}">
+            <input type="hidden" name="action" value="dislike">
+            <button type="submit">👎 {{ .Post.Dislikes }}</button>
+        </form>
+    </div>    
+</div>
+<h3>Комментарии</h3>
+{{ if .Comments }}
+    {{ range .Comments }}
+    <div class="comment">
+        <div><b>{{ .Author }}</b> | {{ .CreatedAt }}</div>
+        <div>{{ .Content }}</div>
+        <div>
+            <form method="POST" action="/like" style="display:inline;">
+                <input type="hidden" name="type" value="comment">
+                <input type="hidden" name="id" value="{{ .ID }}">
+                <input type="hidden" name="action" value="like">
+                <button type="submit">👍 {{ .Likes }}</button>
+            </form>
+            <form method="POST" action="/like" style="display:inline;">
+                <input type="hidden" name="type" value="comment">
+                <input type="hidden" name="id" value="{{ .ID }}">
+                <input type="hidden" name="action" value="dislike">
+                <button type="submit">👎 {{ .Dislikes }}</button>
+            </form>
+        </div>        
+    </div>
+    {{ end }}
+{{ else }}
+    <p>Комментариев пока нет.</p>
+{{ end }}
+<!-- Только для авторизованных пользователей -->
+
+{{ if .User }}
+<form method="POST" action="/post/comment">
+    <input type="hidden" name="post_id" value="{{ .Post.ID }}">
+    <textarea name="content" rows="3" required></textarea>
+    <button type="submit">Добавить комментарий</button>
+</form>
+{{ else }}
+<p><a href="/login">Войдите</a>, чтобы оставить комментарий.</p>
+{{ end }}
+
+{{ end }}

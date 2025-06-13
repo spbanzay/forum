@@ -1,0 +1,19 @@
+{{ define "create.html" }}
+<h2>Создать пост</h2>
+{{ if .Error }}<div class="error">{{ .Error }}</div>{{ end }}
+<form method="POST" action="/create">
+  <label>Название:<br><input type="text" name="title" required></label><br><br>
+
+  <label>Описание:<br><textarea name="content" rows="6" required></textarea></label><br><br>
+
+  <label>Категории:<br>
+    <select name="categories" multiple required>
+      {{ range .Categories }}
+      <option value="{{ .ID }}">{{ .Name }}</option>
+      {{ end }}
+    </select>
+  </label><br><br>
+
+  <button type="submit">Опубликовать</button>
+</form>
+{{ end }}
