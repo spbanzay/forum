@@ -76,13 +76,36 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = h.DB.Exec("INSERT INTO users (email, username, password) VALUES (?, ?, ?)", email, username, string(hashed))
+	res, err := h.DB.Exec("INSERT INTO users (email, username, password) VALUES (?, ?, ?)", email, username, string(hashed))
 	if err != nil {
 		h.renderError(w, "Ошибка создания пользователя")
 		return
 	}
 
-	http.Redirect(w, r, "/login", http.StatusSeeOther)
+	userID, err := res.LastInsertId()
+	if err != nil {
+		h.renderError(w, "Ошибка создания пользователя")
+		return
+	}
+
+	// Создаем сессию сразу после регистрации
+	sessionID := uuid.New().String()
+	expires := time.Now().Add(24 * time.Hour)
+	_, err = h.DB.Exec("INSERT INTO sessions (id, user_id, expires_at) VALUES (?, ?, ?)", sessionID, userID, expires)
+	if err != nil {
+		h.renderError(w, "Ошибка создания сессии")
+		return
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session_id",
+		Value:    sessionID,
+		Expires:  expires,
+		HttpOnly: true,
+		Path:     "/",
+	})
+
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 // Вход пользователя
