@@ -1,33 +1,61 @@
 {{ define "index.html" }}
-<h2>Последние посты</h2>
 
-<form method="GET" action="/" id="searchForm" class="d-flex align-items-start mb-3">
-  <input class="form-control me-2" type="search" name="q" placeholder="Поиск" value="{{ .Query }}">
-  <div class="dropdown me-2">
-    <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="categoryDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-      Категория
-    </button>
-    <div class="dropdown-menu p-3" aria-labelledby="categoryDropdown" style="min-width: 200px;">
-      {{ range .Categories }}
-        <div class="form-check">
-          <input class="form-check-input" type="checkbox" name="category" value="{{ .ID }}" {{ if (inSlice $.Selected (printf "%d" .ID)) }}checked{{ end }}>
-          <label class="form-check-label">{{ .Name }}</label>
+<form method="GET" action="/" id="searchForm" class="d-flex flex-wrap align-items-center gap-2 mb-3">
+
+  <!-- Поиск -->
+  <div class="input-group me-2">
+    <input class="form-control" type="search" name="q" placeholder="Поиск" value="{{ .Query }}">
+    <button class="btn btn-outline-success" type="submit">Поиск</button>
+  </div>
+
+  <!-- Категория + Избранное на одной строке -->
+  <div class="d-flex align-items-center gap-2">
+
+    <!-- Категории -->
+    <div class="dropdown">
+      <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="categoryDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+        Категория
+      </button>
+      <div class="dropdown-menu p-3" aria-labelledby="categoryDropdown" style="min-width: 200px;">
+        {{ range .Categories }}
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="category" value="{{ .ID }}" {{ if (inSlice $.Selected (printf "%d" .ID)) }}checked{{ end }}>
+            <label class="form-check-label">{{ .Name }}</label>
+          </div>
+        {{ end }}
+
+        {{ if .Query }}<input type="hidden" name="q" value="{{ .Query }}">{{ end }}
+
+        <div class="d-flex justify-content-between align-items-center mt-3 gap-2">
+          <a href="/" class="btn btn-link btn-sm">Сбросить</a>       
+          <button class="btn btn-primary btn-sm" type="submit">Применить</button>
         </div>
-      {{ end }}
-      <div class="mt-2">
-        <button class="btn btn-primary btn-sm" type="submit">Применить</button>
-        <a href="/" class="btn btn-link btn-sm">Сбросить</a>
       </div>
     </div>
+
+    <!-- Кнопка "Избранное" / "Все посты" -->
+    {{ if .User }}
+      {{ if .LikedView }}
+        <form action="/" method="get" class="m-0">
+          {{ if .Query }}<input type="hidden" name="q" value="{{ .Query }}">{{ end }}
+          {{ range .Selected }}<input type="hidden" name="category" value="{{ . }}">{{ end }}
+          <button type="submit" class="btn btn-outline-secondary">Все посты</button>
+        </form>
+      {{ else }}
+        <form action="/" method="get" class="m-0">
+          {{ if .Query }}<input type="hidden" name="q" value="{{ .Query }}">{{ end }}
+          {{ range .Selected }}<input type="hidden" name="category" value="{{ . }}">{{ end }}
+          <input type="hidden" name="liked" value="1">
+          <button type="submit" class="btn btn-outline-primary">Избранное</button>
+        </form>
+      {{ end }}
+    {{ end }}
+
   </div>
-  <button class="btn btn-outline-success" type="submit">Поиск</button>
+
 </form>
 
-<form action="{{ if .LikedView }}/{{ else }}/filter/liked{{ end }}" method="get" class="mb-3">
-  <button class="btn btn-outline-primary btn-sm {{ if .LikedView }}selected{{ end }}" type="submit" name="liked" value="1">
-    Избранное
-  </button>
-</form>
+<h2>Последние посты</h2>
 
 {{ if eq (len .Posts) 0 }}
   <p>Постов пока нет.</p>
@@ -52,3 +80,4 @@
 {{ end }}
 
 {{ end }}
+

@@ -42,12 +42,12 @@ func main() {
 	})
 
 	templates, err = templates.ParseGlob(filepath.Join("templates", "*.html"))
-	for _, tmpl := range templates.Templates() {
-		log.Println("Загружен шаблон:", tmpl.Name())
-	}
-
 	if err != nil {
 		log.Fatal("Ошибка парсинга шаблонов:", err)
+	}
+
+	for _, tmpl := range templates.Templates() {
+		log.Println("Загружен шаблон:", tmpl.Name())
 	}
 
 	commentHandler := handlers.CommentHandler{
@@ -79,7 +79,7 @@ func main() {
 	http.Handle("/static/", http.StripPrefix("/static/", fs))
 
 	// Роуты
-	http.HandleFunc("/", postHandler.ListPosts)
+	// http.HandleFunc("/", postHandler.ListPosts)
 	http.HandleFunc("/register", authHandler.Register)
 	http.HandleFunc("/login", authHandler.Login)
 	http.HandleFunc("/logout", authHandler.Logout)
@@ -87,8 +87,7 @@ func main() {
 	http.HandleFunc("/post/", postHandler.GetPost)
 	http.HandleFunc("/post/comment", commentHandler.AddComment)
 	http.HandleFunc("/like", likeHandler.Like)
-	http.HandleFunc("/filter/category", filterHandler.ByCategory)
-	http.HandleFunc("/filter/liked", filterHandler.ByLiked)
+	http.HandleFunc("/", filterHandler.FilteredPosts)
 
 	log.Println("Сервер запущен на http://localhost:8080")
 	if err := http.ListenAndServe(":8080", nil); err != nil {
