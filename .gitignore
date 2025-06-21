@@ -1,0 +1,13 @@
+# Ignore macOS directory attributes
+.DS_Store
+
+# Ignore database files
+*.db
+
+# Ignore build artifacts
+forum
+*.exe
+
+# Ignore temporary files
+*~
+*.tmp
