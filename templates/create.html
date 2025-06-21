@@ -1,21 +1,24 @@
 {{ define "create.html" }}
-<h2>Создать пост</h2>
+<div class="auth-wrapper">
 {{ if .Error }}<div class="text-danger mb-2">{{ .Error }}</div>{{ end }}
-<form method="POST" action="/create">
-  <div class="mb-3">
-    <label class="form-label">Название:
+<form method="POST" action="/create" style="max-width: 700px; width: 100%;">
+  <div class="mb-3 w-100" >
+    <h2 class="text-center">Создать пост</h2>
+  </div>
+  <div class="mb-3 w-100">
+    <label class="form-label w-100">Название:
       <input type="text" class="form-control" name="title" required>
     </label>
   </div>
 
-  <div class="mb-3">
-    <label class="form-label">Описание:
+  <div class="mb-3 w-100">
+    <label class="form-label w-100">Описание:
       <textarea class="form-control" name="content" rows="6" required></textarea>
     </label>
   </div>
 
-  <div class="mb-3">
-    <label class="form-label">Категории:
+  <div class="mb-3 w-100">
+    <label class="form-label w-100">Категории:
       <select class="form-select" name="categories" multiple required>
         {{ range .Categories }}
         <option value="{{ .ID }}">{{ .Name }}</option>
@@ -24,6 +27,7 @@
     </label>
   </div>
 
-  <button class="btn btn-primary" type="submit">Опубликовать</button>
+  <button class="btn btn-primary float-end" type="submit">Опубликовать</button>
 </form>
+</div>
 {{ end }}

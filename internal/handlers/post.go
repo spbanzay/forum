@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"forum/internal/models"
 	"log"
@@ -219,7 +220,9 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, err := tx.Exec("INSERT INTO posts (user_id, title, content) VALUES (?, ?, ?)", userID, title, content)
+	createdAt := time.Now().UTC()
+
+	res, err := tx.Exec("INSERT INTO posts (user_id, title, content, created_at) VALUES (?, ?, ?, ?)", userID, title, content, createdAt)
 	if err != nil {
 		tx.Rollback()
 		http.Error(w, "Ошибка создания поста", http.StatusInternalServerError)

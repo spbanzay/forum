@@ -48,11 +48,12 @@ func (h *CommentHandler) AddComment(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/post/"+postIDStr, http.StatusSeeOther)
 		return
 	}
+	createdAt := time.Now().UTC()
 
 	_, err = h.DB.Exec(`
 		INSERT INTO comments (post_id, user_id, content, created_at) 
 		VALUES (?, ?, ?, ?)`,
-		postID, userID, content, time.Now(),
+		postID, userID, content, createdAt,
 	)
 	if err != nil {
 		log.Println("Ошибка при добавлении комментария:", err)

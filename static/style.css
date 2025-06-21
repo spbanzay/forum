@@ -1,7 +1,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap');
 
-html {
-    transition: background-color 0.4s ease, color 0.4s ease;
+html, body {
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
 }
 
 body {
@@ -13,13 +15,14 @@ body {
 }
 
 .content-wrapper {
-    margin: 30px auto;
+    margin: 24px auto;
     background: #ffffff;
     padding: 24px;
     border-radius: 12px;
     box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
     transition: background-color 0.4s ease;
 }
+
 
 header {
     display: flex;
@@ -36,7 +39,7 @@ nav a {
 
 nav a:hover {
     color: #ffd700;
-}
+}  
 
 .post, .comment {
     border-bottom: 1px solid #e9ecef;
@@ -48,7 +51,7 @@ nav a:hover {
 }
 
 .post-card {
-    background: #ffffff;
+    background: #f8f9fa;
     border-radius: 12px;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
     padding: 20px;
@@ -255,8 +258,6 @@ button.selected {
     padding: 5px 10px;
 }
 
-/* muted текст (опубликовано, автор) */
-
 .text-muted {
     color: #6c757d;
 }
@@ -266,8 +267,6 @@ body.dark-mode .text-muted {
     color: #adb5bd !important;
 }
 
-
-/* плейсхолдер в input::placeholder */
 input::placeholder {
     color: #6c757d;
 }
@@ -276,7 +275,6 @@ input::placeholder {
     color: #ced4da;
 }
 
-/* dropdown (категории фильтра) */
 .dropdown-menu {
     background-color: #ffffff;
     border-radius: 8px;
@@ -321,3 +319,27 @@ input::placeholder {
     background-color: #ced4da;
     color: #1e1e2f;
 }
+
+.scroll-area {
+    height: calc(100vh - 64px - 160px);
+    overflow-y: auto;
+    padding-right: 12px;
+    margin-top: 10px;
+}
+
+.scroll-area::-webkit-scrollbar {
+    width: 8px;
+}
+.scroll-area::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+}
+
+.auth-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 24px;
+  }
+
+  

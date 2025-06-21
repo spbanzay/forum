@@ -1,5 +1,5 @@
 {{ define "login.html" }}
-<h2>Вход</h2>
+<div class="auth-wrapper">
 {{ $flash := .Flash }}
 {{ if $flash }}
     <div class="alert alert-warning">{{ $flash }}</div>
@@ -7,6 +7,9 @@
 
 {{ if .Error }}<div class="text-danger mb-2">{{ .Error }}</div>{{ end }}
 <form method="POST" action="/login">
+    <div class="mb-3">
+        <h2 class="text-center">Вход</h2>
+    </div>
     <div class="mb-3">
         <label class="form-label">Email:
             <input type="email" class="form-control" name="email" required>
@@ -17,6 +20,7 @@
             <input type="password" class="form-control" name="password" required>
         </label>
     </div>
-    <button class="btn btn-primary" type="submit">Войти</button>
+    <button class="btn btn-primary w-100" type="submit">Войти</button>
 </form>
+</div>
 {{ end }} 
