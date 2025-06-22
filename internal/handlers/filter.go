@@ -2,8 +2,10 @@ package handlers
 
 import (
 	"database/sql"
+	"fmt"
 	"forum/internal/models"
 	"html/template"
+	"log"
 	"net/http"
 	"strings"
 )
@@ -11,20 +13,27 @@ import (
 type FilterHandler struct {
 	DB        *sql.DB
 	Templates *template.Template
+	Err       *ErrorHandler
 }
 
 func (h *FilterHandler) FilteredPosts(w http.ResponseWriter, r *http.Request) {
+	log.Println("=== FilteredPosts вызван ===")
+
 	r.ParseForm()
+	fmt.Println("DEBUG form values:", r.Form)
 
 	query := r.FormValue("q")
 	selectedCategories := r.Form["category"]
+
+	log.Println("DEBUG selectedCategories:", r.Form["category"])
+
 	liked := r.FormValue("liked") == "1"
 
 	userID, username, _ := GetUserFromSession(h.DB, r)
 
 	posts, err := GetFilteredPosts(h.DB, query, selectedCategories, liked, userID)
 	if err != nil {
-		http.Error(w, "Ошибка загрузки постов", http.StatusInternalServerError)
+		h.Err.Render(w, http.StatusInternalServerError, "Ошибка загрузки постов")
 		return
 	}
 

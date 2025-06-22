@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	dbinit "forum/internal/db"
 	"forum/internal/handlers"
 	"html/template"
@@ -39,6 +40,14 @@ func main() {
 			}
 			return false
 		},
+		"contains": func(m map[string][]string, key string, val interface{}) bool {
+			for _, v := range m[key] {
+				if fmt.Sprint(v) == fmt.Sprint(val) {
+					return true
+				}
+			}
+			return false
+		},
 	})
 
 	templates, err = templates.ParseGlob(filepath.Join("templates", "*.html"))
@@ -50,47 +59,61 @@ func main() {
 		log.Println("Загружен шаблон:", tmpl.Name())
 	}
 
+	errHandler := &handlers.ErrorHandler{Templates: templates}
+
 	commentHandler := handlers.CommentHandler{
 		DB:        db,
 		Templates: templates,
+		Err:       errHandler,
 	}
 
 	likeHandler := handlers.LikeHandler{
-		DB: db,
+		DB:  db,
+		Err: errHandler,
 	}
 
 	filterHandler := handlers.FilterHandler{
 		DB:        db,
 		Templates: templates,
+		Err:       errHandler,
 	}
 
 	postHandler := handlers.PostHandler{
 		DB:        db,
 		Templates: templates,
+		Err:       errHandler,
 	}
 
 	authHandler := handlers.AuthHandler{
 		DB:        db,
 		Templates: templates,
+		Err:       errHandler,
 	}
 
+	mux := http.NewServeMux()
 	// Статические файлы (CSS, изображения)
 	fs := http.FileServer(http.Dir("static"))
-	http.Handle("/static/", http.StripPrefix("/static/", fs))
+	mux.Handle("/static/", http.StripPrefix("/static/", fs))
 
 	// Роуты
-	// http.HandleFunc("/", postHandler.ListPosts)
-	http.HandleFunc("/register", authHandler.Register)
-	http.HandleFunc("/login", authHandler.Login)
-	http.HandleFunc("/logout", authHandler.Logout)
-	http.HandleFunc("/create", postHandler.CreatePost)
-	http.HandleFunc("/post/", postHandler.GetPost)
-	http.HandleFunc("/post/comment", commentHandler.AddComment)
-	http.HandleFunc("/like", likeHandler.Like)
-	http.HandleFunc("/", filterHandler.FilteredPosts)
+	mux.HandleFunc("/register", authHandler.Register)
+	mux.HandleFunc("/login", authHandler.Login)
+	mux.HandleFunc("/logout", authHandler.Logout)
+	mux.HandleFunc("/create", postHandler.CreatePost)
+	mux.HandleFunc("/post/comment", commentHandler.AddComment)
+	mux.HandleFunc("/like", likeHandler.Like)
+	mux.HandleFunc("/post/", postHandler.GetPost)
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/" {
+			errHandler.NotFound(w, r)
+			return
+		}
+		filterHandler.FilteredPosts(w, r)
+	})
 
+	wrappedMux := errHandler.RecoveryMiddleware(mux)
 	log.Println("Сервер запущен на http://localhost:8080")
-	if err := http.ListenAndServe(":8080", nil); err != nil {
+	if err := http.ListenAndServe(":8080", wrappedMux); err != nil {
 		log.Fatal("Ошибка запуска сервера:", err)
 	}
 }

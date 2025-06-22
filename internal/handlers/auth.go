@@ -9,6 +9,8 @@ import (
 
 	"html/template"
 
+	"regexp"
+
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -16,6 +18,24 @@ import (
 type AuthHandler struct {
 	DB        *sql.DB
 	Templates *template.Template
+	Err       *ErrorHandler
+}
+
+// Проверка формата email
+func isValidEmail(email string) bool {
+	re := regexp.MustCompile(`^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`)
+	return re.MatchString(email)
+}
+
+// Проверка формата username
+func isValidUsername(username string) bool {
+	re := regexp.MustCompile(`^[a-zA-Z0-9_]{3,20}$`)
+	return re.MatchString(username)
+}
+
+// Минимальная длина пароля — 6 символов
+func isValidPassword(password string) bool {
+	return len(password) >= 6
 }
 
 // Регистрация пользователя
@@ -24,16 +44,17 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		_, username, _ := GetUserFromSession(h.DB, r)
 		flash := GetFlash(w, r, "flash")
 		h.Templates.ExecuteTemplate(w, "layout", map[string]interface{}{
-			"Error": nil,
-			"Page":  "register",
-			"Flash": flash,
-			"User":  username,
+			"Page":       "register",
+			"User":       username,
+			"Flash":      flash,
+			"FormErrors": map[string]string{},
+			"FormValues": map[string]string{},
 		})
 		return
 	}
 
 	if err := r.ParseForm(); err != nil {
-		h.renderError(w, "Ошибка формы")
+		h.Err.Render(w, http.StatusBadRequest, "Ошибка формы")
 		return
 	}
 
@@ -41,59 +62,88 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	username := r.FormValue("username")
 	password := r.FormValue("password")
 
-	if email == "" || username == "" || password == "" {
-		h.renderError(w, "Все поля обязательны")
-		return
+	formErrors := make(map[string]string)
+
+	if email == "" {
+		formErrors["Email"] = "Введите email"
+	} else if !isValidEmail(email) {
+		formErrors["Email"] = "Некорректный формат email"
 	}
 
-	// Проверка на уникальность email
+	if username == "" {
+		formErrors["Username"] = "Введите имя пользователя"
+	} else if !isValidUsername(username) {
+		formErrors["Username"] = "Имя может содержать только буквы, цифры и подчёркивания (3-20 символов)"
+	}
+
+	if password == "" {
+		formErrors["Password"] = "Введите пароль"
+	} else if !isValidPassword(password) {
+		formErrors["Password"] = "Пароль должен быть не менее 6 символов"
+	}
+
+	// Проверка email в базе
 	var exists int
-	err := h.DB.QueryRow("SELECT COUNT(*) FROM users WHERE email = ?", email).Scan(&exists)
-	if err != nil {
-		h.renderError(w, "Ошибка базы данных")
-		return
-	}
-	if exists > 0 {
-		h.renderError(w, "Email уже занят")
-		return
+	if email != "" {
+		err := h.DB.QueryRow("SELECT COUNT(*) FROM users WHERE email = ?", email).Scan(&exists)
+		if err != nil {
+			h.Err.Render(w, http.StatusInternalServerError, "Ошибка базы данных")
+			return
+		}
+		if exists > 0 {
+			formErrors["Email"] = "Email уже занят"
+		}
 	}
 
-	// Проверка на уникальность username
-	err = h.DB.QueryRow("SELECT COUNT(*) FROM users WHERE username = ?", username).Scan(&exists)
-	if err != nil {
-		h.renderError(w, "Ошибка базы данных")
-		return
+	// Проверка username в базе
+	if username != "" {
+		err := h.DB.QueryRow("SELECT COUNT(*) FROM users WHERE username = ?", username).Scan(&exists)
+		if err != nil {
+			h.Err.Render(w, http.StatusInternalServerError, "Ошибка базы данных")
+			return
+		}
+		if exists > 0 {
+			formErrors["Username"] = "Имя пользователя уже занято"
+		}
 	}
-	if exists > 0 {
-		h.renderError(w, "Имя пользователя уже занято")
+
+	if len(formErrors) > 0 {
+		h.Templates.ExecuteTemplate(w, "layout", map[string]interface{}{
+			"Page":       "register",
+			"FormErrors": formErrors,
+			"FormValues": map[string]string{
+				"Email":    email,
+				"Username": username,
+			},
+		})
 		return
 	}
 
 	// Хеширование пароля
 	hashed, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		h.renderError(w, "Ошибка шифрования пароля")
+		h.Err.Render(w, http.StatusInternalServerError, "Ошибка шифрования пароля")
 		return
 	}
 
 	res, err := h.DB.Exec("INSERT INTO users (email, username, password) VALUES (?, ?, ?)", email, username, string(hashed))
 	if err != nil {
-		h.renderError(w, "Ошибка создания пользователя")
+		h.Err.Render(w, http.StatusInternalServerError, "Ошибка создания пользователя")
 		return
 	}
 
 	userID, err := res.LastInsertId()
 	if err != nil {
-		h.renderError(w, "Ошибка создания пользователя")
+		h.Err.Render(w, http.StatusInternalServerError, "Ошибка создания пользователя")
 		return
 	}
 
-	// Создаем сессию сразу после регистрации
+	// Создание сессии
 	sessionID := uuid.New().String()
 	expires := time.Now().Add(24 * time.Hour)
 	_, err = h.DB.Exec("INSERT INTO sessions (id, user_id, expires_at) VALUES (?, ?, ?)", sessionID, userID, expires)
 	if err != nil {
-		h.renderError(w, "Ошибка создания сессии")
+		h.Err.Render(w, http.StatusInternalServerError, "Ошибка создания сессии")
 		return
 	}
 
@@ -114,44 +164,87 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		_, username, _ := GetUserFromSession(h.DB, r)
 		flash := GetFlash(w, r, "flash")
 		h.Templates.ExecuteTemplate(w, "layout", map[string]interface{}{
-			"Error": nil,
-			"Page":  "login",
-			"Flash": flash,
-			"User":  username,
+			"Page":       "login",
+			"User":       username,
+			"Flash":      flash,
+			"FormErrors": map[string]string{},
+			"FormValues": map[string]string{},
 		})
 		return
 	}
 
 	if err := r.ParseForm(); err != nil {
-		h.renderError(w, "Ошибка формы")
+		h.Err.Render(w, http.StatusBadRequest, "Ошибка формы")
 		return
 	}
 
 	email := r.FormValue("email")
 	password := r.FormValue("password")
 
+	formErrors := make(map[string]string)
+
+	if email == "" {
+		formErrors["Email"] = "Введите email"
+	} else if !isValidEmail(email) {
+		formErrors["Email"] = "Некорректный формат email"
+	}
+
+	if password == "" {
+		formErrors["Password"] = "Введите пароль"
+	}
+
+	if len(formErrors) > 0 {
+		h.Templates.ExecuteTemplate(w, "layout", map[string]interface{}{
+			"Page":       "login",
+			"FormErrors": formErrors,
+			"FormValues": map[string]string{
+				"Email": email,
+			},
+		})
+		return
+	}
+
+	// Поиск пользователя
 	var id int
 	var hashed string
 	err := h.DB.QueryRow("SELECT id, password FROM users WHERE email = ?", email).Scan(&id, &hashed)
 	if err == sql.ErrNoRows {
-		h.renderError(w, "Пользователь не найден")
+		formErrors["Email"] = "Пользователь не найден"
+		h.Templates.ExecuteTemplate(w, "layout", map[string]interface{}{
+			"Page":       "login",
+			"FormErrors": formErrors,
+			"FormValues": map[string]string{"Email": email},
+		})
 		return
 	} else if err != nil {
-		h.renderError(w, "Ошибка базы данных")
+		h.Err.Render(w, http.StatusInternalServerError, "Ошибка базы данных")
 		return
 	}
 
+	// Проверка пароля
 	if bcrypt.CompareHashAndPassword([]byte(hashed), []byte(password)) != nil {
-		h.renderError(w, "Неверный пароль")
+		formErrors["Password"] = "Неверный пароль"
+		h.Templates.ExecuteTemplate(w, "layout", map[string]interface{}{
+			"Page":       "login",
+			"FormErrors": formErrors,
+			"FormValues": map[string]string{"Email": email},
+		})
 		return
 	}
 
-	// Создание сессии
+	// Удаление старых сессий
+	_, err = h.DB.Exec("DELETE FROM sessions WHERE user_id = ?", id)
+	if err != nil {
+		h.Err.Render(w, http.StatusInternalServerError, "Ошибка удаления старых сессий")
+		return
+	}
+
+	// Создание новой сессии
 	sessionID := uuid.New().String()
 	expires := time.Now().Add(24 * time.Hour)
 	_, err = h.DB.Exec("INSERT INTO sessions (id, user_id, expires_at) VALUES (?, ?, ?)", sessionID, id, expires)
 	if err != nil {
-		h.renderError(w, "Ошибка создания сессии")
+		h.Err.Render(w, http.StatusInternalServerError, "Ошибка создания сессии")
 		return
 	}
 
@@ -176,13 +269,6 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 		http.SetCookie(w, cookie)
 	}
 	http.Redirect(w, r, "/", http.StatusSeeOther)
-}
-
-// Вспомогательная функция для вывода ошибок
-func (h *AuthHandler) renderError(w http.ResponseWriter, msg string) {
-	h.Templates.ExecuteTemplate(w, "layout", map[string]interface{}{
-		"Error": msg,
-	})
 }
 
 func GetUserFromSession(db *sql.DB, r *http.Request) (int, string, bool) {

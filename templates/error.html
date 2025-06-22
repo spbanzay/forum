@@ -1,7 +1,11 @@
-{{ define "content" }}
-<h2>Ошибка</h2>
-<div class="alert alert-danger" role="alert">
-    {{ .Error }}
+{{ define "error.html" }}
+<div class="text-center my-5">
+    <h2 class="display-5">Ошибка {{ .Status }}</h2>
+    <div class="alert alert-danger d-inline-block mt-3" role="alert">
+        {{ .Error }}
+    </div>
 </div>
-<a href="/">Вернуться на главную</a>
+<div class="d-flex justify-content-end">
+    <a href="/" class="btn btn-outline-primary">Вернуться на главную</a>
+</div>
 {{ end }}

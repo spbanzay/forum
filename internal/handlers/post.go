@@ -13,14 +13,20 @@ import (
 	"log"
 )
 
+const (
+	maxTitleLength   = 200
+	maxContentLength = 10000
+)
+
 type PostHandler struct {
 	DB        *sql.DB
 	Templates *template.Template
+	Err       *ErrorHandler
 }
 
 func (h *PostHandler) ListPosts(w http.ResponseWriter, r *http.Request) {
 	search := r.URL.Query().Get("q")
-	categoryIDs := r.URL.Query()["category"] // ?category=1&category=2
+	categoryIDs := r.URL.Query()["category"]
 
 	query := `
                 SELECT DISTINCT p.id, p.title, p.content, p.created_at, u.username
@@ -48,7 +54,7 @@ func (h *PostHandler) ListPosts(w http.ResponseWriter, r *http.Request) {
 
 	rows, err := h.DB.Query(query, args...)
 	if err != nil {
-		http.Error(w, "Ошибка базы данных", http.StatusInternalServerError)
+		h.Err.Render(w, http.StatusInternalServerError, "Ошибка базы данных")
 		return
 	}
 	defer rows.Close()
@@ -109,7 +115,7 @@ func (h *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
 	idStr := r.URL.Path[len("/post/"):]
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		http.NotFound(w, r)
+		h.Err.NotFound(w, r)
 		return
 	}
 
@@ -122,7 +128,7 @@ func (h *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
 		WHERE p.id = ?
 	`, id).Scan(&post.ID, &post.UserID, &post.Title, &post.Content, &post.CreatedAt, &author)
 	if err != nil {
-		http.NotFound(w, r)
+		h.Err.NotFound(w, r)
 		return
 	}
 
@@ -173,32 +179,37 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if r.Method == http.MethodGet {
+	// Получение списка категорий
+	getCategories := func() []models.Category {
 		rows, err := h.DB.Query("SELECT id, name FROM categories")
 		if err != nil {
-			http.Error(w, "Ошибка базы данных", http.StatusInternalServerError)
-			return
+			h.Err.Render(w, http.StatusInternalServerError, "Ошибка базы данных")
+			return nil
 		}
 		defer rows.Close()
-
 		var categories []models.Category
 		for rows.Next() {
 			var cat models.Category
 			rows.Scan(&cat.ID, &cat.Name)
 			categories = append(categories, cat)
 		}
+		return categories
+	}
 
+	if r.Method == http.MethodGet {
 		h.Templates.ExecuteTemplate(w, "layout", map[string]interface{}{
-			"Page":       "create",
-			"Categories": categories,
-			"User":       username,
+			"Page":               "create",
+			"Categories":         getCategories(),
+			"User":               username,
+			"Errors":             map[string]string{},
+			"FormValues":         map[string]string{},
+			"SelectedCategories": []string{},
 		})
 		return
 	}
 
-	// POST-запрос
 	if err := r.ParseForm(); err != nil {
-		http.Error(w, "Ошибка формы", http.StatusBadRequest)
+		h.Err.Render(w, http.StatusBadRequest, "Ошибка формы")
 		return
 	}
 
@@ -206,26 +217,44 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	content := r.FormValue("content")
 	catIDs := r.Form["categories"]
 
-	if title == "" || content == "" || len(catIDs) == 0 {
+	errors := make(map[string]string)
+	if title == "" || len(title) > 200 {
+		errors["Title"] = "Название обязательно (до 200 символов)"
+	}
+	if content == "" || len(content) > 5000 {
+		errors["Content"] = "Описание обязательно (до 5000 символов)"
+	}
+	if len(catIDs) == 0 {
+		errors["Categories"] = "Выберите хотя бы одну категорию"
+	}
+
+	if len(errors) > 0 {
 		h.Templates.ExecuteTemplate(w, "layout", map[string]interface{}{
-			"Page":  "create",
-			"Error": "Заполните все поля",
+			"Page":       "create",
+			"User":       username,
+			"Categories": getCategories(),
+			"Errors":     errors,
+			"FormValues": map[string]string{
+				"Title":   title,
+				"Content": content,
+			},
+			"SelectedCategories": catIDs,
 		})
 		return
 	}
 
+	// Сохраняем пост
 	tx, err := h.DB.Begin()
 	if err != nil {
-		http.Error(w, "Ошибка базы данных", http.StatusInternalServerError)
+		h.Err.Render(w, http.StatusInternalServerError, "Ошибка базы данных")
 		return
 	}
+	defer tx.Rollback()
 
-	createdAt := time.Now().UTC()
-
-	res, err := tx.Exec("INSERT INTO posts (user_id, title, content, created_at) VALUES (?, ?, ?, ?)", userID, title, content, createdAt)
+	res, err := tx.Exec("INSERT INTO posts (user_id, title, content, created_at) VALUES (?, ?, ?, ?)",
+		userID, title, content, time.Now().UTC())
 	if err != nil {
-		tx.Rollback()
-		http.Error(w, "Ошибка создания поста", http.StatusInternalServerError)
+		h.Err.Render(w, http.StatusInternalServerError, "Ошибка создания поста")
 		return
 	}
 	postID, _ := res.LastInsertId()
@@ -233,7 +262,7 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	for _, catID := range catIDs {
 		tx.Exec("INSERT INTO post_categories (post_id, category_id) VALUES (?, ?)", postID, catID)
 	}
-	tx.Commit()
 
+	tx.Commit()
 	http.Redirect(w, r, fmt.Sprintf("/post/%d", postID), http.StatusSeeOther)
 }

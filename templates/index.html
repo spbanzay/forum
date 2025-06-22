@@ -25,7 +25,8 @@
           {{ end }}
           <div class="d-flex justify-content-between align-items-center mt-3 gap-2">
             <a href="/" class="btn btn-link btn-sm">Сбросить</a>
-            <button class="btn btn-primary btn-sm" type="submit">Применить</button>
+            <!-- <button class="btn btn-primary btn-sm" type="submit">Применить</button> -->
+            <button class="btn btn-primary btn-sm" onclick="document.getElementById('searchForm').submit()">Применить</button>
           </div>
         </div>
       </div>
@@ -54,8 +55,8 @@
 {{ end }}
 <div class="scroll-area">
   {{ range .Posts }}
-    <div class="post-card">
-      <h5><a href="/post/{{ .ID }}">{{ .Title }}</a></h5>
+  <div class="post-card" data-title="{{ .Title }}" data-content="{{ .Content }}">
+    <h5><a href="/post/{{ .ID }}">{{ .Title }}</a></h5>
       <div class="mb-2">
         {{ range .Categories }}
           <span class="badge bg-secondary category-badge">{{ .Name }}</span>

@@ -13,6 +13,7 @@ import (
 type CommentHandler struct {
 	DB        *sql.DB
 	Templates *template.Template
+	Err       *ErrorHandler
 }
 
 // Добавление комментария
@@ -23,7 +24,7 @@ func (h *CommentHandler) AddComment(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := r.ParseForm(); err != nil {
-		http.Error(w, "Ошибка формы", http.StatusBadRequest)
+		h.Err.Render(w, http.StatusBadRequest, "Ошибка формы")
 		return
 	}
 
@@ -57,7 +58,7 @@ func (h *CommentHandler) AddComment(w http.ResponseWriter, r *http.Request) {
 	)
 	if err != nil {
 		log.Println("Ошибка при добавлении комментария:", err)
-		http.Error(w, "Ошибка базы данных", http.StatusInternalServerError)
+		h.Err.Render(w, http.StatusInternalServerError, "Ошибка базы данных")
 		return
 	}
 

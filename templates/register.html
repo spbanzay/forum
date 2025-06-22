@@ -1,28 +1,41 @@
 {{ define "register.html" }}
+<div class="auth-wrapper mx-auto" style="max-width: 400px;">
+    <form method="POST" action="/register" class="w-100">
+        <div class="mb-4 text-center">
+            <h2>Регистрация</h2>
+        </div>
 
-<div class="auth-wrapper">
+        <div class="mb-3">
+            <label class="form-label w-100">
+                Email:
+                <input type="email" class="form-control w-100" name="email" required value="{{ index .FormValues "Email" }}">
+            </label>
+            {{ with index .FormErrors "Email" }}
+                <div class="text-danger w-100 small">{{ . }}</div>
+            {{ end }}
+        </div>
 
-{{ if .Error }}<div class="text-danger mb-2">{{ .Error }}</div>{{ end }}
-<form method="POST" action="/register">
-    <div class="mb-3">
-        <h2 class="text-center">Регистрация</h2>
-    </div>
-    <div class="mb-3">
-        <label class="form-label">Email:
-            <input type="email" class="form-control" name="email" required>
-        </label>
-    </div>
-    <div class="mb-3">
-        <label class="form-label">Имя пользователя:
-            <input type="text" class="form-control" name="username" required>
-        </label>
-    </div>
-    <div class="mb-3">
-        <label class="form-label">Пароль:
-            <input type="password" class="form-control" name="password" required>
-        </label>
-    </div>
-    <button class="btn btn-primary w-100" type="submit">Зарегистрироваться</button>
-</form>
+        <div class="mb-3">
+            <label class="form-label w-100">
+                Имя пользователя:
+                <input type="text" class="form-control w-100" name="username" required value="{{ index .FormValues "Username" }}">
+            </label>
+            {{ with index .FormErrors "Username" }}
+                <div class="text-danger w-100 small">{{ . }}</div>
+            {{ end }}
+        </div>
+
+        <div class="mb-4">
+            <label class="form-label w-100">
+                Пароль:
+                <input type="password" class="form-control w-100" name="password" required>
+            </label>
+            {{ with index .FormErrors "Password" }}
+                <div class="text-danger w-100 small">{{ . }}</div>
+            {{ end }}
+        </div>
+
+        <button class="btn btn-primary w-100" type="submit">Зарегистрироваться</button>
+    </form>
 </div>
 {{ end }}

@@ -1,33 +1,45 @@
 {{ define "create.html" }}
 <div class="auth-wrapper">
-{{ if .Error }}<div class="text-danger mb-2">{{ .Error }}</div>{{ end }}
-<form method="POST" action="/create" style="max-width: 700px; width: 100%;">
-  <div class="mb-3 w-100" >
-    <h2 class="text-center">Создать пост</h2>
-  </div>
-  <div class="mb-3 w-100">
-    <label class="form-label w-100">Название:
-      <input type="text" class="form-control" name="title" required>
-    </label>
-  </div>
+  <form method="POST" action="/create" style="max-width: 700px; width: 100%;">
+    <div class="mb-3 w-100">
+      <h2 class="text-center">Создать пост</h2>
+    </div>
 
-  <div class="mb-3 w-100">
-    <label class="form-label w-100">Описание:
-      <textarea class="form-control" name="content" rows="6" required></textarea>
-    </label>
-  </div>
+    <div class="mb-3 w-100">
+      <label class="form-label w-100">Название:
+        <input type="text" class="form-control" name="title" required
+               value="{{ index .FormValues "Title" }}">
+      </label>
+      {{ with index .Errors "Title" }}
+        <div class="text-danger mt-1">{{ . }}</div>
+      {{ end }}
+    </div>
 
-  <div class="mb-3 w-100">
-    <label class="form-label w-100">Категории:
-      <select class="form-select" name="categories" multiple required>
-        {{ range .Categories }}
-        <option value="{{ .ID }}">{{ .Name }}</option>
-        {{ end }}
-      </select>
-    </label>
-  </div>
+    <div class="mb-3 w-100">
+      <label class="form-label w-100">Описание:
+        <textarea class="form-control" name="content" rows="6" required>{{ index .FormValues "Content" }}</textarea>
+      </label>
+      {{ with index .Errors "Content" }}
+        <div class="text-danger mt-1">{{ . }}</div>
+      {{ end }}
+    </div>
 
-  <button class="btn btn-primary float-end" type="submit">Опубликовать</button>
-</form>
+    <div class="mb-3 w-100">
+      <label class="form-label w-100">Категории:
+        <select class="form-select" name="categories" multiple required>
+          {{ range .Categories }}
+            <option value="{{ .ID }}" {{ if (inSlice $.SelectedCategories (printf "%v" .ID)) }}selected{{ end }}>
+              {{ .Name }}
+            </option>
+          {{ end }}
+        </select>
+      </label>
+      {{ with index .Errors "Categories" }}
+        <div class="text-danger mt-1">{{ . }}</div>
+      {{ end }}
+    </div>    
+
+    <button class="btn btn-primary float-end" type="submit">Опубликовать</button>
+  </form>
 </div>
 {{ end }}

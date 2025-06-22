@@ -3,14 +3,14 @@ package handlers
 import (
 	"database/sql"
 	"fmt"
-	"log"
 	"net/http"
 	"strconv"
 )
 
 // Тип сущности для лайка: "post" или "comment"
 type LikeHandler struct {
-	DB *sql.DB
+	DB  *sql.DB
+	Err *ErrorHandler
 }
 
 // Обработчик для лайка/дизлайка поста или комментария
@@ -22,12 +22,12 @@ func (h *LikeHandler) Like(w http.ResponseWriter, r *http.Request) {
 
 	userID, _, ok := GetUserFromSession(h.DB, r)
 	if !ok {
-		http.Error(w, "Только для авторизованных пользователей", http.StatusUnauthorized)
+		h.Err.Render(w, http.StatusUnauthorized, "Только для авторизованных пользователей")
 		return
 	}
 
 	if err := r.ParseForm(); err != nil {
-		http.Error(w, "Ошибка формы", http.StatusBadRequest)
+		h.Err.Render(w, http.StatusBadRequest, "Ошибка формы")
 		return
 	}
 
@@ -36,18 +36,13 @@ func (h *LikeHandler) Like(w http.ResponseWriter, r *http.Request) {
 	action := r.FormValue("action") // "like" или "dislike"
 	targetID, err := strconv.Atoi(idStr)
 	if err != nil || (action != "like" && action != "dislike") {
-		http.Error(w, "Некорректные параметры", http.StatusBadRequest)
+		h.Err.Render(w, http.StatusBadRequest, "Некорректные параметры")
 		return
 	}
 
 	isLike := action == "like"
 
-	var (
-		table     string
-		column    string
-		deleteSQL string
-		insertSQL string
-	)
+	var table, column string
 
 	switch typ {
 	case "post":
@@ -57,41 +52,70 @@ func (h *LikeHandler) Like(w http.ResponseWriter, r *http.Request) {
 		table = "comment_likes"
 		column = "comment_id"
 	default:
-		http.Error(w, "Неверный тип", http.StatusBadRequest)
+		h.Err.Render(w, http.StatusBadRequest, "Неверный тип")
 		return
 	}
-
-	// Генерация SQL под конкретную таблицу
-	deleteSQL = fmt.Sprintf("DELETE FROM %s WHERE %s = ? AND user_id = ?", table, column)
-	insertSQL = fmt.Sprintf("INSERT INTO %s (%s, user_id, is_like) VALUES (?, ?, ?)", table, column)
 
 	tx, err := h.DB.Begin()
 	if err != nil {
-		http.Error(w, "Ошибка транзакции", http.StatusInternalServerError)
+		h.Err.Render(w, http.StatusInternalServerError, "Ошибка транзакции")
 		return
 	}
 
-	_, err = tx.Exec(deleteSQL, targetID, userID)
-	if err != nil {
-		tx.Rollback()
-		http.Error(w, "Ошибка при удалении лайка", http.StatusInternalServerError)
-		return
-	}
+	// Проверим, был ли лайк/дизлайк ранее
+	var currentValue bool
+	err = tx.QueryRow(
+		fmt.Sprintf("SELECT is_like FROM %s WHERE %s = ? AND user_id = ?", table, column),
+		targetID, userID,
+	).Scan(&currentValue)
 
-	_, err = tx.Exec(insertSQL, targetID, userID, isLike)
-	if err != nil {
+	if err == sql.ErrNoRows {
+		// Ещё не было лайка — добавим
+		_, err = tx.Exec(
+			fmt.Sprintf("INSERT INTO %s (%s, user_id, is_like) VALUES (?, ?, ?)", table, column),
+			targetID, userID, isLike,
+		)
+		if err != nil {
+			tx.Rollback()
+			h.Err.Render(w, http.StatusInternalServerError, "Ошибка при добавлении лайка")
+			return
+		}
+	} else if err == nil {
+		if currentValue == isLike {
+			// Повторное нажатие — удалим
+			_, err = tx.Exec(
+				fmt.Sprintf("DELETE FROM %s WHERE %s = ? AND user_id = ?", table, column),
+				targetID, userID,
+			)
+			if err != nil {
+				tx.Rollback()
+				h.Err.Render(w, http.StatusInternalServerError, "Ошибка при удалении лайка")
+				return
+			}
+		} else {
+			// Меняем статус
+			_, err = tx.Exec(
+				fmt.Sprintf("UPDATE %s SET is_like = ? WHERE %s = ? AND user_id = ?", table, column),
+				isLike, targetID, userID,
+			)
+			if err != nil {
+				tx.Rollback()
+				h.Err.Render(w, http.StatusInternalServerError, "Ошибка при обновлении лайка")
+				return
+			}
+		}
+	} else {
 		tx.Rollback()
-		http.Error(w, "Ошибка при добавлении лайка", http.StatusInternalServerError)
+		h.Err.Render(w, http.StatusInternalServerError, "Ошибка проверки состояния")
 		return
 	}
 
 	if err := tx.Commit(); err != nil {
-		http.Error(w, "Ошибка при коммите", http.StatusInternalServerError)
+		h.Err.Render(w, http.StatusInternalServerError, "Ошибка при коммите")
 		return
 	}
 
 	http.Redirect(w, r, r.Header.Get("Referer"), http.StatusSeeOther)
-	log.Printf("[LIKE] redirect to: %s", r.Header.Get("Referer"))
 }
 
 // Получить количество лайков и дизлайков для сущности
